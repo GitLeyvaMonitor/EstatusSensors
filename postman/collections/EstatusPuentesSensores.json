@@ -1,0 +1,351 @@
+{
+	"info": {
+		"_postman_id": "c274210a-d518-4496-a313-41aaf46be202",
+		"name": "EstatusPuentesSensores",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_uid": "38339424-c274210a-d518-4496-a313-41aaf46be202"
+	},
+	"item": [
+		{
+			"name": "https://sensors.monitorapp.io/json/GatewayList Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "adc3b788-d5d3-46c2-9dbf-6846e087d022",
+						"exec": [
+							"// Obtener la respuesta JSON de los gateways\r",
+							"let respuesta = pm.response.json();\r",
+							"\r",
+							"// Verificar si hay un arreglo \"Result\"\r",
+							"let puentes = respuesta.Result || [];\r",
+							"\r",
+							"// Mostrar la estructura de un gateway para ver los campos\r",
+							"if (puentes.length > 0) {\r",
+							"    console.log(\"Estructura de un gateway:\", JSON.stringify(puentes[0], null, 2));\r",
+							"}\r",
+							"\r",
+							"// Filtrar gateways en alerta amarilla por tiempo de última comunicación\r",
+							"let maxTiempoComunicacion = 10 * 60 * 1000; // 10 min en milisegundos\r",
+							"let puentesAlerta = puentes.filter(puente => {\r",
+							"    let fechaUltimaComunicacionStr = puente.LastCommunicationDate;\r",
+							"    let fechaUltimaComunicacion = new Date(parseInt(fechaUltimaComunicacionStr.replace(/\\/Date\\((\\d+)\\)\\//, '$1')));\r",
+							"\r",
+							"    // Verificar si la fecha es válida\r",
+							"    if (isNaN(fechaUltimaComunicacion.getTime())) {\r",
+							"        console.log(`Log mal comunicación del Gateway ${puente.GatewayID}: Fecha inválida`);\r",
+							"        return false; // Ignorar si la fecha es inválida\r",
+							"    }\r",
+							"\r",
+							"    let tiempoActual = new Date();\r",
+							"    let diferenciaTiempo = tiempoActual - fechaUltimaComunicacion;\r",
+							"\r",
+							"    // Filtrar por última comunicación (mayor a 10 min)\r",
+							"    console.log(`Última comunicación del Gateway ${puente.GatewayID}: ${fechaUltimaComunicacion}`);\r",
+							"    return diferenciaTiempo > maxTiempoComunicacion;\r",
+							"});\r",
+							"\r",
+							"// Definir mensaje por defecto\r",
+							"let mensajePuentes = \"\";\r",
+							"\r",
+							"// Verificar si hay gateways en alerta\r",
+							"if (puentesAlerta.length === 0) {\r",
+							"    console.log(\"Puentes OK.\");\r",
+							"    mensajePuentes = \"Puentes OK.\"; // Mensaje \"Puentes OK\"\r",
+							"} else {\r",
+							"    console.log(`Gateways en Falla: ${puentesAlerta.length}`);\r",
+							"\r",
+							"    // Mensaje de gateways en alerta, eliminando duplicados\r",
+							"    mensajePuentes = [...new Set(puentesAlerta.map(puente => `GatewayID:${puente.GatewayID}, Nombre:${puente.Name}`))].join(\"; \");\r",
+							"}\r",
+							"\r",
+							"// Guardar el mensaje en la variable de entorno\r",
+							"pm.environment.set(\"mensajePuentes\", mensajePuentes);\r",
+							"console.log(\"Mensaje de Puentes:\", mensajePuentes);\r",
+							"\r",
+							"// Obtener IDs de gateways en alerta amarilla (NetworkID) sin duplicados\r",
+							"let idsPuentesFalla = [...new Set(puentesAlerta.map(puente => puente.NetworkID))];\r",
+							"\r",
+							"// Guardar los IDs de los gateways en alerta\r",
+							"pm.environment.set(\"idsPuentesFalla\", JSON.stringify(idsPuentesFalla));\r",
+							"\r",
+							"// Mostrar IDs de gateways en alerta\r",
+							"console.log(\"IDs de Puentes en Falla:\", idsPuentesFalla);\r",
+							"\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "24aa385f-d264-468e-95b9-cdfdacf6eec0",
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"id": "fae9cc0c-4598-4398-9ee3-bf2d50cd6bf9",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "APIKeyID",
+						"value": "",
+						"type": "text"
+					},
+					{
+						"key": "APISecretKey",
+						"value": "",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://sensors.monitorapp.io/json/GatewayList",
+					"protocol": "https",
+					"host": [
+						"sensors",
+						"monitorapp",
+						"io"
+					],
+					"path": [
+						"json",
+						"GatewayList"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "https://sensors.monitorapp.io/json/SensorList Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "3e19e5be-5a6e-4d88-b219-01b0a2b695cf",
+						"exec": [
+							"// Obtener la respuesta JSON de los sensores\r",
+							"let respuesta = pm.response.json();\r",
+							"\r",
+							"// Verificar si la respuesta tiene un arreglo \"Result\"\r",
+							"let sensores = respuesta.Result || [];\r",
+							"\r",
+							"// Recuperar los IDs de los gateways en falla desde la variable de entorno\r",
+							"let idsPuentesFalla = JSON.parse(pm.environment.get(\"idsPuentesFalla\") || \"[]\");\r",
+							"\r",
+							"// Filtrar los sensores que NO están conectados a gateways en falla usando CSNetID y NetworkID\r",
+							"let sensoresFiltrados = sensores.filter(sensor => !idsPuentesFalla.includes(sensor.CSNetID));\r",
+							"\r",
+							"// Filtrar los sensores con Status = 4 (Inaccesible)\r",
+							"let sensoresInaccesibles = sensoresFiltrados.filter(sensor => sensor.Status === 4);\r",
+							"\r",
+							"// Filtrar los sensores con batería baja (por ejemplo, BatteryLevel <= 50)\r",
+							"let sensoresBateriaBaja = sensoresFiltrados.filter(sensor => sensor.BatteryLevel <= 50);\r",
+							"\r",
+							"// Filtrar los sensores en estado amarillo (Status = 1)\r",
+							"let sensoresAlertaAmarilla = sensoresFiltrados.filter(sensor => sensor.Status === 1);\r",
+							"\r",
+							"// Filtrar los sensores con baja señal (SignalStrength <= 5)\r",
+							"let sensoresBajaSenal = sensoresFiltrados.filter(sensor => sensor.SignalStrength <= 5);\r",
+							"\r",
+							"// *** Creación de los mensajes personalizados ***\r",
+							"\r",
+							"// Crear el mensaje personalizado con los IDs de los sensores inaccesibles\r",
+							"let mensajeInaccesibles = sensoresInaccesibles.map(sensor => `ID:${sensor.SensorID},Status:Inaccesible`).join(\"; \");\r",
+							"\r",
+							"// Crear el mensaje personalizado con los IDs de los sensores con batería baja\r",
+							"let mensajeBateriaBaja = sensoresBateriaBaja.map(sensor => `ID:${sensor.SensorID},BatteryLevel:${sensor.BatteryLevel}`).join(\"; \");\r",
+							"\r",
+							"// Crear el mensaje personalizado para los sensores en alerta (amarillo)\r",
+							"let mensajeAlertaAmarilla = sensoresAlertaAmarilla.map(sensor => `ID:${sensor.SensorID},Status:Alerta-Amarillo`).join(\"; \");\r",
+							"\r",
+							"// Crear el mensaje personalizado para los sensores con baja señal (roja)\r",
+							"let mensajeBajaSenal = sensoresBajaSenal.map(sensor => `ID:${sensor.SensorID},SignalStrength:${sensor.SignalStrength}`).join(\"; \");\r",
+							"\r",
+							"// *** Combinar todos los mensajes en uno solo ***\r",
+							"let mensajeCombinado = `SensoresInaccesibles:${mensajeInaccesibles}; SensoresConBateriaBaja:${mensajeBateriaBaja}; SensoresEnAlertaAmarilla:${mensajeAlertaAmarilla}; SensoresConBajaSeñal:${mensajeBajaSenal}`;\r",
+							"\r",
+							"// Guardar el mensaje combinado en una variable de entorno\r",
+							"pm.environment.set(\"mensajeSensores\", mensajeCombinado);\r",
+							"\r",
+							"// Mostrar solo el mensaje combinado en la consola\r",
+							"console.log(mensajeCombinado);\r",
+							"\r",
+							"// Recuperar el mensaje combinado de los sensores y gateways\r",
+							"let mensajePuentes = pm.environment.get(\"mensajePuentes\") || \"\";\r",
+							"let mensajeSensores = pm.environment.get(\"mensajeSensores\") || \"\";\r",
+							"\r",
+							"// Combinar el mensaje de los gateways y sensores en alerta\r",
+							"let mensajeFinalCombinado = `Gateways en Alerta Amarilla:\\n${mensajePuentes}\\n\\nSensores:\\n${mensajeSensores}`.replace(/\\n/g, '\\\\n');\r",
+							"\r",
+							"// Guardar el mensaje final combinado en una variable de entorno\r",
+							"pm.environment.set(\"mensajeFinal\", mensajeFinalCombinado);\r",
+							"\r",
+							"// Mostrar el mensaje final combinado en la consola para verificar\r",
+							"console.log(\"Valor de mensajeFinal:\", mensajeFinalCombinado);\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "f5ffc5a9-959c-4074-9c73-234df732528c",
+						"exec": [
+							"\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"id": "3d9feca4-a16f-41ef-ada6-097918086440",
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {
+					"user-agent": true
+				},
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "APIKeyID",
+						"value": "",
+						"type": "text"
+					},
+					{
+						"key": "APISecretKey",
+						"value": "",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://sensors.monitorapp.io/json/SensorListFull",
+					"protocol": "https",
+					"host": [
+						"sensors",
+						"monitorapp",
+						"io"
+					],
+					"path": [
+						"json",
+						"SensorListFull"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "https://api.sendgrid.com/v3/mail/send Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "5e61f365-ff3b-445a-8581-b8a561470b0c",
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "80412a5b-aaa7-4feb-bced-19d2136bfb37",
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"id": "8ed49691-2e5d-43ef-848e-625641b5f55d",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Key",
+						"value": "Content-Type",
+						"type": "text"
+					},
+					{
+						"key": "Value",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"personalizations\": [\r\n    {\r\n      \"to\": [\r\n        {\r\n          \"email\": \"leyvamonitor@gmail.com\"\r\n        }\r\n      ],\r\n      \"subject\": \"Reporte de Sensores y Gateways en Alerta\"\r\n    }\r\n  ],\r\n  \"from\": {\r\n    \"email\": \"mario@parrotlabs.com.mx\"\r\n  },\r\n  \"content\": [\r\n    {\r\n      \"type\": \"text/plain\",\r\n      \"value\": \"{{mensajeFinal}}\"\r\n    }\r\n  ]\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.sendgrid.com/v3/mail/send",
+					"protocol": "https",
+					"host": [
+						"api",
+						"sendgrid",
+						"com"
+					],
+					"path": [
+						"v3",
+						"mail",
+						"send"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
